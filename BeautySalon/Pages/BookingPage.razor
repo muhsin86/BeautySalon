@@ -1,0 +1,217 @@
+﻿@page "/bookning"
+@using BeautySalon.Data
+@using BeautySalon.Services
+
+@inherits OwningComponentBase<BookningService>
+<AuthorizeView>
+    <Authorized Context="Auth">
+
+        @if (booknings == null)
+        {
+            <p><em>Loading...</em></p>
+        }
+        else
+        {
+            <div class="container border p-3">
+                <div class="row">
+                    <div class="col-5">
+                        <h3 class="text-info">Bookning List</h3>
+                    </div>
+                    <div class="col-3">
+                    </div>
+                </div>
+                <div class="row pt-4">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Product Name</th>
+                                <th>Date</th>
+                                <th>Confirmed</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var bookning in booknings)
+                            {
+                                <tr>
+                                    <td>@bookning.CustomerName</td>
+                                    <td>@bookning.CustomerEmail</td>
+                                    <td>@bookning.CustomerPhone</td>
+                                    <td>@bookning.BookningDate.ToShortDateString()</td>
+                                    <td>@bookning.Product.Name</td>
+                                    <td><input type="checkbox" checked="@(bookning.IsConfirmed)" class="form-control" disabled></td>
+                                    <td>
+                                        <button class="btn btn-primary" style="width:150px;"
+                                                @onclick="(() => EditBookning(bookning))">
+                                            Edit
+                                        </button>
+
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+        @if (ShowPopup)
+        {
+            <div class="modal" tabindex="-1" style="display:block" role="dialog">
+                <EditForm Model="@objBookning" OnValidSubmit="@ValidSubmit">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h3 class="text-info">Edit Appointment</h3>
+
+                                <button type="button" class="close"
+                                        @onclick="ClosePopup">
+                                    <span aria-hidden="true">X</span>
+                                </button>
+                            </div>
+                            <!-- Edit form for the current forecast -->
+                            <div class="modal-body">
+                                <DataAnnotationsValidator />
+                                <ValidationSummary />
+                                <div class="row">
+                                    <div class="col-9">
+
+                                        <div class="row py-2">
+                                            <div class="col-4">
+                                                Name
+                                            </div>
+                                            <div class="col-8">
+                                                <input class="form-control" type="text" @bind="objBookning.CustomerName" />
+                                            </div>
+                                        </div>
+
+                                        <div class="row py-2">
+                                            <div class="col-4">
+                                                Email
+                                            </div>
+                                            <div class="col-8">
+                                                <input class="form-control" type="text" @bind="objBookning.CustomerEmail" />
+                                            </div>
+                                        </div>
+
+                                        <div class="row py-2">
+                                            <div class="col-4">
+                                                Phone
+                                            </div>
+                                            <div class="col-8">
+                                                <input class="form-control" type="text" @bind="objBookning.CustomerPhone" />
+                                            </div>
+                                        </div>
+
+                                        <div class="row py-2">
+                                            <div class="col-4">
+                                                Product
+                                            </div>
+                                            <div class="col-8">
+                                                <input class="form-control" type="text" @bind="objBookning.Product.Name" />
+                                            </div>
+                                        </div>
+
+                                        <div class="row py-2">
+                                            <div class="col-4">
+                                                Date
+                                            </div>
+                                            <div class="col-8">
+                                                <input class="form-control" type="text" value="@objBookning.BookningDate.ToShortDateString()" />
+                                            </div>
+                                        </div>
+
+                                        <div class="row py-2">
+                                            <div class=" offset-4 col">
+                                                <button class="btn btn-success form-control" type="submit">Confirm!</button>
+                                            </div>
+                                            <div class="col">
+                                                <button class="btn btn-danger form-control" @onclick="DeleteBookning">
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-3 ">
+                                        <img src="@convertImageToDisplay(objBookning.Product.Image)" width="100%" style="border-radius:5px; border:1px solid #bbb9b9;" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+
+
+        }
+    </Authorized>
+    <!-- Show this section if the user is not logged in -->
+    <NotAuthorized>
+        <p>You're not signed in.</p>
+    </NotAuthorized>
+</AuthorizeView>
+@code {
+
+    // AuthenticationState is available as a CascadingParameter
+    List<Bookning> booknings;
+    Bookning objBookning = new Bookning();
+
+    public byte[] ImageUploaded { get; set; }
+
+    protected override void OnInitialized()
+    {
+        // Get the current user
+        booknings = Service.GetBooknings();
+    }
+
+
+
+    bool ShowPopup = false;
+    void ClosePopup()
+    {
+        // Close the Popup
+        ShowPopup = false;
+    }
+
+    void EditBookning(Bookning bookning)
+    {
+        objBookning = bookning;
+        booknings = Service.GetBooknings();
+        ShowPopup = true;
+    }
+
+    void DeleteBookning()
+    {
+        ShowPopup = false;
+        var result = @Service.DeleteBookning(objBookning);
+        booknings.Clear();
+        booknings = @Service.GetBooknings();
+    }
+
+    void ValidSubmit()
+    {
+        var result = false;
+        ShowPopup = false;
+        result = Service.ConfirmBookning(objBookning);
+        booknings = Service.GetBooknings();
+    }
+    string convertImageToDisplay(byte[] image)
+    {
+        if (image != null)
+        {
+            var base64 = Convert.ToBase64String(image);
+            var finalStr = string.Format("data:image/jpg;base64,{0}", base64);
+            return finalStr;
+        }
+
+        else { return ""; }
+    }
+
+
+
+
+
+}

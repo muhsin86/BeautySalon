@@ -1,0 +1,45 @@
+﻿@page "/details/{ProductId:int}"
+@using BeautySalon.Data
+@using BeautySalon.Services
+
+@inherits OwningComponentBase<ProductService>
+
+<br />
+<h2 class="text-info">@(ShowBookning? "Bookning" : "Product Details")</h2>
+@if (ShowBookning)
+{
+    <BeautySalon.Pages.Component.BookningComponent OnClickShowDetails="OnClickShowDetails"  bookning="bookning"></BeautySalon.Pages.Component.BookningComponent>
+}
+else
+{
+    <BeautySalon.Pages.Component.DetailsComponent OnClickShowBookning="OnClickShowBookning" bookning="bookning"></BeautySalon.Pages.Component.DetailsComponent>
+}
+
+
+@code {
+    [Parameter]
+    public int ProductId { get; set; }
+
+    public Bookning bookning { get; set; }
+    //this will be false on details page and true on appointments page.
+    bool ShowBookning = false;
+
+    protected override void OnInitialized()
+    {
+        bookning = new Bookning()
+        {
+            BookningDate = DateTime.Now
+        };
+        bookning.Product = Service.GetProduct(ProductId);
+    }
+
+    void OnClickShowBookning()
+    {
+        ShowBookning = true;
+    }
+
+    void OnClickShowDetails()
+    {
+        ShowBookning = false;
+    }
+}

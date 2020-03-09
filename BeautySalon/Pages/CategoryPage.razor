@@ -1,0 +1,191 @@
+﻿@* DEFINE THE CATEGORY NAME *@
+@page "/category"
+@* MODEL REFERENCE *@
+@using BeautySalon.Data
+@* CONTROL REFERENCE *@
+@using BeautySalon.Services
+@* TO EXIST THE CATEGORYSEVICES AND WORK THE PAGE *@
+@inherits OwningComponentBase<CategoryService>
+
+<AuthorizeView>
+    <Authorized Context="Auth">
+        @* CHECK IF THE CATEGORY DOES EXIST *@
+        @if (categories == null)
+        {
+            // IF NOT EXIST DISPLAY THIS MESSAGE
+            <p><em>Loading or No categories exist</em></p>
+        }
+        else
+        {
+            // IF EXIST DISPLAY THE CATEGORY NAMES
+            <div class="container border p-3">
+                <div class="row">
+                    <div class="col-5">
+                        <h3 class="text-info">Category List</h3>
+                    </div>
+                    <div class="col-3">
+                        <button class="btn btn-info form-control" @onclick="AddNewCategory">
+                            Add New Category
+                        </button>
+                    </div>
+                </div>
+
+                <div class="row pt-4">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Category Name</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @* GET AND DISPLAY EACH CATEGORY NAME *@
+                            @foreach (var obj in categories)
+                            {
+                                <tr>
+                                    <td>@obj.Name</td>
+                                    <td>
+                                        <button class="btn btn-primary" style="width:150px" @onclick="(()=> EditCategory(obj))">
+                                            Edit
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    </Authorized>
+    <NotAuthorized>
+        <p>You're not signed in.</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+@* CHECK MODEL BOX *@
+@if (ShowPopup)
+{
+    <div class="modal" tabindex="-1" style="display:block" role="dialog">
+        <EditForm Model="@objCategory" OnValidSubmit="@ValidSubmit">
+
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 class="text-info">@(objCategory.Id !=0 ? "Update" : "Create") Category</h3>
+                        <button type="button" class="close" @onclick="ClosePopup">
+                            <span aria-hidden="true">X</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+                        <div class="row">
+                            <div class="col-9">
+                                <div class="row py-2">
+                                    <div class="col-4">
+                                        Category Name
+                                    </div>
+                                    <div class="col-8">
+                                        <input class="form-control" type="text" @bind="objCategory.Name" />
+                                    </div>
+                                </div>
+                                <div class="row py-2">
+
+                                    <div class="offset-4 col">
+                                        <button class="btn btn-primary form-control" type="submit">Submit</button>
+                                    </div>
+                                    @if (objCategory.Id > 0)
+                                    {
+                                        <div class="col">
+                                            <button class="btn btn-danger form-control"
+                                                    @onclick="DeleteCategory"
+                                                    type="submit">
+                                                Delete
+                                            </button>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </EditForm>
+    </div>
+}
+
+
+
+
+@code {
+    // GET ALL CATEGORY LISTS
+    List<Category>
+        categories;
+
+    // CREATE A NEW CATEGORY
+    Category objCategory = new Category();
+
+    // SHOW MODEL BOX
+    bool ShowPopup = false;
+
+    // LOADING CATEGORIES
+    protected override void OnInitialized()
+    {
+        // LOADING THE CATEGORIES
+        categories = Service.GetCategories();
+
+    }
+
+    // CREATE CATEGORY FUNCTION
+    void AddNewCategory()
+    {
+        objCategory = new Category();
+        objCategory.Id = 0;
+        ShowPopup = true;
+    }
+
+    // UPDATE CATEGORY
+    void EditCategory(Category category)
+    {
+        objCategory = category;
+        ShowPopup = true;
+    }
+
+    // DELETE CATEGORY
+    void DeleteCategory()
+    {
+        ShowPopup = false;
+        Service.DeleteCategory(objCategory);
+        categories.Clear();
+        categories = Service.GetCategories();
+    }
+
+    // CLOSE MODEL BOX
+    void ClosePopup()
+    {
+        ShowPopup = false;
+    }
+
+    //
+    void ValidSubmit()
+    {
+        var result = false;
+        ShowPopup = false;
+
+        // CHECK IF THE CATEGORY ID IS GREATE THAN 0 DISPLAY UPDATE MENU OTHERWISE DISPLAY CREATE MENU
+        if (objCategory.Id > 0)
+        {
+            // IF IS UPDATE CATEGORY DISPLAY UPDATE  ON THE MENU
+            result = Service.UpdateCategory(objCategory);
+        }
+        else
+        {
+            // OR IF IS CREATE CATEGORY DISPLAY CREATE  ON THE MENU
+            result = Service.CreateCategory(objCategory);
+        }
+
+
+        categories = Service.GetCategories();
+    }
+}

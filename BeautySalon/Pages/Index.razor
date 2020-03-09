@@ -1,0 +1,24 @@
+﻿@page "/"
+
+@using BeautySalon.Services;
+@using BeautySalon.Data;
+@inherits OwningComponentBase<ProductService>
+
+
+<div class="row">
+
+    @foreach (var product in listProduct)
+    {
+        <BeautySalon.Pages.Component.SingleProduct product="product"></BeautySalon.Pages.Component.SingleProduct>
+    }
+
+</div>
+
+
+@code{
+    List<Product> listProduct = new List<Product>();
+    protected override void OnInitialized()
+    {
+        listProduct = Service.GetProducts();
+    }
+}
